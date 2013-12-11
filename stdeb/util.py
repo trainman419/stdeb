@@ -909,9 +909,10 @@ class DebianInfo:
 
         self.dirlist = ""
 
-        sequencer_options = ['--with python2']
+        major_version = sys.version_info[0]
+        sequencer_options = ['--with python%d' % major_version]
         if force_buildsystem:
-            sequencer_options.append('--buildsystem=python_distutils')
+            sequencer_options.append('--buildsystem=python%d_distutils' % major_version)
         self.sequencer_options = ' '.join(sequencer_options)
 
         setup_env_vars = parse_vals(cfg,module_name,'Setup-Env-Vars')
