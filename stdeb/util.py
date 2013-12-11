@@ -2,7 +2,10 @@
 # This module contains most of the code of stdeb.
 #
 import re, sys, os, shutil, select
-import ConfigParser
+try:
+    from configparser import NoSectionError, SafeConfigParser
+except ImportError:
+    from ConfigParser import NoSectionError, SafeConfigParser
 import subprocess
 import tempfile
 import stdeb
@@ -24,9 +27,8 @@ DH_IDEAL_VERS = '7.4.3' # fixes Debian bug 548392
 
 PYTHON_ALL_MIN_VERS = '2.6.6-3'
 
-import exceptions
-class CalledProcessError(exceptions.Exception): pass
-class CantSatisfyRequirement(exceptions.Exception): pass
+class CalledProcessError(Exception): pass
+class CantSatisfyRequirement(Exception): pass
 
 def check_call(*popenargs, **kwargs):
     retcode = subprocess.call(*popenargs, **kwargs)
@@ -138,7 +140,7 @@ class NotGiven: pass
 
 def process_command(args, cwd=None):
     if not isinstance(args, (list, tuple)):
-        raise RuntimeError, "args passed must be in a list"
+        raise RuntimeError("args passed must be in a list")
     check_call(args, cwd=cwd)
 
 def recursive_hardlink(src,dst):
@@ -211,13 +213,13 @@ def get_date_822():
         raise ValueError('%s command does not exist.'%cmd)
     args = [cmd,'-R']
     result = get_cmd_stdout(args).strip()
-    return result
+    return result.decode('ascii')
 
 def get_version_str(pkg):
     args = ['/usr/bin/dpkg-query','--show',
            '--showformat=${Version}',pkg]
     stdout = get_cmd_stdout(args)
-    return stdout.strip()
+    return stdout.strip().decode('ascii')
 
 def load_module(name,fname):
     import imp
@@ -291,7 +293,7 @@ def get_deb_depends_from_setuptools_requires(requirements, on_failure="warn"):
         cmd = subprocess.Popen(args, stdin=subprocess.PIPE,
                                stdout=subprocess.PIPE,
                                universal_newlines=True)
-    except Exception, le:
+    except Exception as le:
         # TODO: catch rc=1 and "E: The cache directory is empty. You need to
         # run 'apt-file update' first.", and tell the user to follow those
         # instructions.
@@ -323,7 +325,7 @@ def get_deb_depends_from_setuptools_requires(requirements, on_failure="warn"):
             dd.setdefault(
                 pydist.project_name.lower(), {}).setdefault(
                 pydist, set()).add(debname)
-        except ValueError, le:
+        except ValueError as le:
             log.warn("I got an error parsing a .egg-info file named \"%s\" "
                      "from Debian package \"%s\" as a pkg_resources "
                      "Distribution: %s" % (egginfo, debname, le,))
@@ -334,7 +336,7 @@ def get_deb_depends_from_setuptools_requires(requirements, on_failure="warn"):
     for req in parsed_reqs:
         reqname = req.project_name.lower()
         gooddebs = set()
-        for pydist, debs in dd.get(reqname, {}).iteritems():
+        for pydist, debs in dd.get(reqname, {}).items():
             if pydist in req:
                 ## log.info("I found Debian packages \"%s\" which provides "
                 ##          "Python package \"%s\", version \"%s\", which "
@@ -535,7 +537,7 @@ def parse_vals(cfg,section,option):
     """parse comma separated values in debian control file style from .cfg"""
     try:
         vals = cfg.get(section,option)
-    except ConfigParser.NoSectionError, err:
+    except NoSectionError as err:
         if section != 'DEFAULT':
             vals = cfg.get('DEFAULT',option)
         else:
@@ -611,7 +613,7 @@ def check_cfg_files(cfg_files,module_name):
     example.
     """
 
-    cfg = ConfigParser.SafeConfigParser()
+    cfg = SafeConfigParser()
     cfg.read(cfg_files)
     if cfg.has_section(module_name):
         section_items = cfg.items(module_name)
@@ -670,7 +672,7 @@ class DebianInfo:
         if len(cfg_files):
             check_cfg_files(cfg_files,module_name)
 
-        cfg = ConfigParser.SafeConfigParser(cfg_defaults)
+        cfg = SafeConfigParser(cfg_defaults)
         cfg.read(cfg_files)
 
         if sdist_dsc_command is not None:
@@ -1084,7 +1086,7 @@ def build_dsc(debinfo,
     fd = open( rules_fname, mode='w')
     fd.write(rules)
     fd.close()
-    os.chmod(rules_fname,0755)
+    os.chmod(rules_fname,0o755)
 
     #    D. debian/compat
     fd = open( os.path.join(debian_dir,'compat'), mode='w')

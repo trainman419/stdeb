@@ -1,21 +1,29 @@
+from __future__ import print_function
+
 import os
-import xmlrpclib
-import urllib2
+try:
+    from xmlrpc.client import ServerProxy, Transport
+except ImportError:
+    from xmlrpclib import ServerProxy, Transport
+try:
+    from urllib.request import build_opener, Request
+except ImportError:
+    from urllib2 import build_opener, Request
 import hashlib
 import warnings
 
 def myprint(mystr,fd=None):
     if fd is None:
-        print mystr
+        print(mystr)
     else:
-        print >> fd, mystr
+        print(mystr, file=fd)
 
 USER_AGENT = 'pypi-install/0.6.0+git ( https://github.com/astraw/stdeb )'
 
 def find_tar_gz(package_name, pypi_url = 'https://python.org/pypi',verbose=0):
-    transport = xmlrpclib.Transport()
+    transport = Transport()
     transport.user_agent = USER_AGENT
-    pypi = xmlrpclib.ServerProxy(pypi_url, transport=transport)
+    pypi = ServerProxy(pypi_url, transport=transport)
 
     download_url = None
     expected_md5_digest = None
@@ -76,9 +84,9 @@ def get_source_tarball(package_name,verbose=0,allow_unsafe_download=False):
                 raise ValueError('File "%s" exists but has wrong checksum.'%fname)
     if verbose >= 1:
         myprint( 'downloading %s' % download_url )
-    request = urllib2.Request(download_url)
+    request = Request(download_url)
     request.add_header('User-Agent', USER_AGENT )
-    opener = urllib2.build_opener()
+    opener = build_opener()
     package_tar_gz = opener.open(request).read()
     if verbose >= 1:
         myprint( 'done downloading %d bytes.' % ( len(package_tar_gz), ) )
