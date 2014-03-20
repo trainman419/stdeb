@@ -60,7 +60,7 @@ class sdist_dsc(common_debian_package_command):
             shutil.rmtree(fullpath_repackaged_dirname)
         os.makedirs(fullpath_repackaged_dirname)
         expand_sdist_file( os.path.abspath(source_tarball),
-                           cwd=fullpath_repackaged_dirname )
+                           cwd=self.dist_dir )
 
         if self.use_premade_distfile is not None:
         # ensure premade sdist can actually be used
